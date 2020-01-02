@@ -1,0 +1,226 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/OverlappingMarkerSpiderfier/1.0.3/oms.min.js"></script>
+
+   <style>
+    html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    #map {
+        height: 100%;
+    }
+</style>
+
+
+    <div id="map"></div>
+
+
+
+<script>
+    var map;
+    var kenya = { lat: -0.0236, lng: 37.9062 };
+    var marker;
+    var infowindow;
+    var green_icon = 'http://maps.google.com/mapfiles/ms/icons/green-dot.png';
+    var red_icon = 'http://maps.google.com/mapfiles/ms/icons/red-dot.png';
+
+    var isBouncing;
+    var isZoomed = false;
+
+
+    function CenterControl(controlDiv, map) {
+
+        // Set CSS for the control border.
+        var controlUI = document.createElement('div');
+        controlUI.style.backgroundColor = '#fff';
+        controlUI.style.border = '2px solid #fff';
+        controlUI.style.borderRadius = '3px';
+        controlUI.style.boxShadow = '0 2px 6px rgba(0,0,0,.3)';
+        controlUI.style.cursor = 'pointer';
+        controlUI.style.marginBottom = '22px';
+        controlUI.style.textAlign = 'center';
+        controlUI.title = 'Click to recenter the map';
+        controlDiv.appendChild(controlUI);
+
+        // Set CSS for the control interior.
+        var controlText = document.createElement('div');
+        controlText.style.color = 'rgb(25,25,25)';
+        controlText.style.fontFamily = 'Roboto,Arial,sans-serif';
+        controlText.style.fontSize = '16px';
+        controlText.style.lineHeight = '38px';
+        controlText.style.paddingLeft = '5px';
+        controlText.style.paddingRight = '5px';
+        controlText.innerHTML = 'Center Map';
+        controlUI.appendChild(controlText);
+
+        // Setup the click event listeners: 
+        controlUI.addEventListener('click', function () {
+            map.setZoom(6);
+            map.setCenter(kenya);
+
+        });
+
+    }
+
+
+
+    function initMap() {
+
+        var options = {
+            zoom: 6,
+            center: kenya
+        };
+
+        map = new google.maps.Map(document.getElementById('map'), options);
+
+        var centerControlDiv = document.createElement('div');
+        var centerControl = new CenterControl(centerControlDiv, map);
+
+        centerControlDiv.index = 1;
+        map.controls[google.maps.ControlPosition.BOTTOM_CENTER].push(centerControlDiv);
+
+
+        var oms = new OverlappingMarkerSpiderfier(map, {
+            markersWontMove: true,
+            markersWontHide: true,
+            basicFormatEvents: true,
+            keepSpiderfied: true,
+            circleFootSeparation: 50,
+
+
+        });
+
+        var markers = [];
+
+
+         function addMarker(coords, content, animation) {
+
+            var marker = new google.maps.Marker({
+                position: coords,
+                map: map,
+                icon: icon = {
+                    url: isBouncing ? red_icon : green_icon,
+                    scaledSize: new google.maps.Size(40, 40), // scaled size
+                },
+                animation: animation
+            });
+
+            var infoWindow = new google.maps.InfoWindow({
+                content: content
+
+            });
+
+
+            console.log('ZOOM LEVEL AT START: ' + map.getZoom());
+
+            function goBack() {
+                if (map.getZoom() === 6) {
+                    isZoomed = false;
+                    google.maps.event.addListener(marker, 'click', function () {
+                        map.panTo(this.getPosition());
+                        map.setZoom(9);
+                        isZoomed = true;
+
+                    });
+
+                }
+            }
+
+            goBack();
+
+            google.maps.event.addListener(map, 'zoom_changed', function () {
+
+                var zoomLevel = map.getZoom();
+                switch(zoomLevel) {
+                    case 9 :
+                     isZoomed = true;
+                    marker.addListener('spider_click', function () {
+                        infoWindow.open(map, marker);
+                    });
+
+                    oms.addMarker(marker);
+                    google.maps.event.addListener(marker, 'click', function () {
+                        infoWindow.open(map, marker);
+                    });
+                    break;
+
+                    case 6 :
+                    goBack;
+                    break;
+
+
+                }
+
+
+                console.log('ZOOM LEVEL IS:' + zoomLevel)   
+
+            });
+
+            markers.push(marker);
+
+            google.maps.event.addListener(map, "click", function (event) {
+                infoWindow.close(map, marker);
+            });
+        }
+
+        function setMapOnAll(map) {
+            for (var i = 0; i < markers.length; i++) {
+                markers[i].setMap(map);
+            }
+        }
+
+
+        function clearMarkers() {
+            setMapOnAll(null);
+        }
+
+
+        function deleteMarkers() {
+            clearMarkers();
+            markers = [];
+
+        }
+
+
+         addMarker(
+                    { lat: -0.0236, lng: 37.9062},
+                     '<div id="iw-container">' +
+                    '<div class="iw-title"> Eldoret</div>' +
+                    '<div class="iw-content">' +
+                    '<br/>'
+
+                    + '<h3> No errors to report </h3>'
+
+                );
+
+          addMarker(
+                    { lat: -0.0236, lng: 37.9062},
+                     '<div id="iw-container">' +
+                    '<div class="iw-title"> Fine</div>' +
+                    '<div class="iw-content">' +
+                    '<br/>'
+
+                    + '<h3> Okay </h3>'
+
+                );
+
+             addMarker(
+                    {lat: -0.0236, lng: 37.9062},
+                     '<div id="iw-container">' +
+                    '<div class="iw-title"> Kisii</div>' +
+                    '<div class="iw-content">' +
+                    '<br/>'
+
+                    + '<h3> Nothing here </h3>'
+
+                );
+
+
+
+    }
+
+</script>
+<script async defer
+    src="https://maps.googleapis.com/maps/api/js?language=en&key=XXXXXXXXXXXXXXX&callback=initMap">
+    </script>
